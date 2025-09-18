@@ -4,95 +4,105 @@ const employmentUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/tyokay/sta
 const nf = new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 0 });
 const nfPct = new Intl.NumberFormat("fi-FI", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+async function runQuery(url, bodyPath) {
+  const bodyRes = await fetch(bodyPath, { cache: "no-store" });
+  if (!bodyRes.ok) throw new Error(`Query file not found: ${bodyPath}`);
+  const body = await bodyRes.json();
 
-
-async function runQuery(bodyPath, url) {
-	const body = await (await fetch(bodyPath, { cache: "no-store" })).json();
-	const res = await fetch(url, {
-		method: "POST",
-		headers: { "Content-Type": "application/json", "Accept": "application/json" },
-		body: JSON.stringify(body)
-	});
-	if (!res.ok) throw new Error(`${url} -> ${await res.text()}`);
-	return res.json();
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+  return res.json();
 }
 
 function colorRow(tr, pct) {
-	if (pct > 45)      tr.style.backgroundColor = "#abffbd"; // vihreä
-	else if (pct < 25) tr.style.backgroundColor = "#ff9e9e"; // punainen
+  if (pct > 45) tr.style.backgroundColor = "#abffbd";
+  else if (pct < 25) tr.style.backgroundColor = "#ff9e9e";
 }
 
-
 function parseStat2(px) {
-	const root = px.dimension ? px : px.dataset;
-	if (!root || !root.dimension?.Alue || !Array.isArray(px.value || root.value)) {
-		console.error("Unexpected PXWeb response:", px);
-		throw new Error("PXWeb response format mismatch");
-	}
-	const dim    = root.dimension.Alue;
-	const labels = dim.category.label;           
-	const index  = dim.category.index;            
-	const codes  = Object.keys(index).sort((a,b)=> index[a]-index[b]);
-	const values = (px.value || root.value).map(Number);
+  const root = px.dimension ? px : px.dataset;
+  if (!root || !root.dimension?.Alue || !Array.isArray(px.value || root.value)) {
+    throw new Error("PXWeb response format mismatch");
+  }
+  const dim = root.dimension.Alue;
+  const labels = dim.category.label;
+  const index = dim.category.index;
+  const codes = Object.keys(index).sort((a, b) => index[a] - index[b]);
+  const values = (px.value || root.value).map(Number);
+  const byCode = Object.fromEntries(codes.map((c, i) => [c, values[i]]));
+  return { labels, codes, byCode };
+}
 
-	const byCode = Object.fromEntries(codes.map((c,i)=> [c, values[i]]));
-	return { labels, codes, byCode };
+function showErrorRow(msg) {
+  const tbody = document.getElementById("pop-tbody");
+  tbody.innerHTML = "";
+  const tr = document.createElement("tr");
+  const td = document.createElement("td");
+  td.colSpan = 4;
+  td.textContent = msg;
+  tr.appendChild(td);
+  tbody.appendChild(tr);
 }
 
 function setupTable(popPx, empPx) {
-	const pop = parseStat2(popPx);
-	const emp = parseStat2(empPx);
+  const pop = parseStat2(popPx);
+  const emp = empPx && (empPx.dimension || empPx.dataset) ? parseStat2(empPx) : null;
 
-  const theadRow = document.querySelector("#pop-table thead tr");
-	if (theadRow && theadRow.children.length === 3) {
-		const th = document.createElement("th");
-		th.textContent = "Employment-%";
-		theadRow.appendChild(th);
-	}
+  const tbody = document.getElementById("pop-tbody");
+  tbody.innerHTML = "";
 
-	const tbody = document.getElementById("pop-tbody");
-	tbody.innerHTML = "";
+  for (const code of pop.codes) {
+    const tr = document.createElement("tr");
 
-	for (const code of pop.codes) {
-		const tr  = document.createElement("tr");
+    const td1 = document.createElement("td");
+    td1.textContent = pop.labels[code];
 
-		const td1 = document.createElement("td");
-		td1.textContent = pop.labels[code];
+    const population = Number(pop.byCode[code] ?? 0);
+    const td2 = document.createElement("td");
+    td2.textContent = nf.format(population);
+    td2.style.textAlign = "right";
 
-		const td2 = document.createElement("td");
-		td2.textContent = nf.format(pop.byCode[code]);
-		td2.style.textAlign = "right";
+    const e = emp?.byCode?.[code];
+    const td3 = document.createElement("td");
+    td3.textContent = Number.isFinite(e) ? nf.format(e) : "—";
+    td3.style.textAlign = "right";
 
-		const td3 = document.createElement("td");
-		const e = emp.byCode[code];
-		td3.textContent = Number.isFinite(e) ? nf.format(e) : "—";
-		td3.style.textAlign = "right";
-    
     const td4 = document.createElement("td");
-		td4.style.textAlign = "right";
+    td4.style.textAlign = "right";
+    if (population > 0 && Number.isFinite(e)) {
+      const pct = (e / population) * 100;
+      td4.textContent = `${nfPct.format(pct)}%`;
+      colorRow(tr, pct);
+    } else {
+      td4.textContent = "—";
+    }
 
-		const population = Number(pop.byCode[code] ?? 0);
-		const employment = Number(e);
-
-		if (population > 0 && Number.isFinite(employment)) {
-			const pct = (employment / population) * 100;
-			td4.textContent = `${nfPct.format(pct)}%`;
-			colorRow(tr, pct); 
-		} else {
-			td4.textContent = "—";
-		}
-
-		tr.append(td1, td2, td3, td4);
-		tbody.appendChild(tr);
-	}
+    tr.append(td1, td2, td3, td4);
+    tbody.appendChild(tr);
+  }
 }
 
 async function initializeCode() {
-	const [populationData, employmentData] = await Promise.all([
-		runQuery("./population_query.json", populationUrl),
-		runQuery("./employment_query.json", employmentUrl)
-	]);
-	setupTable(populationData, employmentData);
+  try {
+    const [populationData, employmentData] = await Promise.all([
+      runQuery(populationUrl, "./population_query.json"),
+      runQuery(employmentUrl, "./employment_query.json"),
+    ]);
+    setupTable(populationData, employmentData);
+  } catch (err) {
+    console.error(err);
+    try {
+      const populationData = await runQuery(populationUrl, "./population_query.json");
+      setupTable(populationData, {});
+    } catch (e2) {
+      console.error(e2);
+      showErrorRow(`Data load failed: ${e2.message}`);
+    }
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initializeCode);
