@@ -19,17 +19,18 @@ async function runQuery(url, bodyPath) {
 }
 
 function colorRow(tr, pct) {
-	let color = "";
-	if (pct > 45) color = "#abffbd";
-	else if (pct < 25) color = "#ff9e9e";
-  
-	if (color) {
-	  tr.style.backgroundColor = color;               // rivi
-	  for (const td of tr.children) {                 // kaikki solut
-		td.style.backgroundColor = color;
-	  }
+	tr.classList.remove("over-45", "under-25");
+	if (pct > 45) {
+	  tr.classList.add("over-45");
+	  tr.style.backgroundColor = "#abffbd";
+	} else if (pct < 25) {
+	  tr.classList.add("under-25");
+	  tr.style.backgroundColor = "#ff9e9e";
+	} else {
+	  tr.style.backgroundColor = "";
 	}
   }
+  
 
 function parseStat2(px) {
   const root = px.dimension ? px : px.dataset;

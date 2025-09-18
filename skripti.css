@@ -43,3 +43,6 @@ tbody tr:nth-child(odd) {
 tbody tr:hover {
     background-color: #e0e0e0;
 }
+
+tr.over-45 { background-color: #abffbd !important; }
+tr.under-25 { background-color: #ff9e9e !important; }
