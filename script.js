@@ -1,8 +1,8 @@
 const populationUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vaerak/statfin_vaerak_pxt_11ra.px";
 const employmentUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/tyokay/statfin_tyokay_pxt_115b.px";
 
-const nf = new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 0 });
-const nfPct = new Intl.NumberFormat("fi-FI", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nf = new Intl.NumberFormat("en-UK", { maximumFractionDigits: 0 });
+const nfPct = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 async function runQuery(url, bodyPath) {
   const bodyRes = await fetch(bodyPath, { cache: "no-store" });
