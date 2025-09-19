@@ -21,8 +21,10 @@ async function runQuery(url, bodyPath) {
 function colorRow(tr, pct) {
 	if (pct > 45) {
 		tr.classList.add("over-45");
+		console.log(`Added over-45 class to row with ${pct}% employment`);
 	} else if (pct < 25) {
 		tr.classList.add("under-25");
+		console.log(`Added under-25 class to row with ${pct}% employment`);
 	}
 }
   
