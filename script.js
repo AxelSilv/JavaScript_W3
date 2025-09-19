@@ -93,7 +93,7 @@ function setupTable(popPx, empPx) {
 	  if (population > 0 && Number.isFinite(e)) {
 		const pct = (e / population) * 100;
 		td4.textContent = `${nfPct.format(pct)}%`;
-		colorRow(tr, pct);   // väritys vasta kun kaikki td:t on rivissä
+		colorRow(tr, pct);
 	  } else {
 		td4.textContent = "—";
 	  }
