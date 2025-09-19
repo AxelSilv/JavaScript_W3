@@ -2,7 +2,7 @@ const populationUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/vaerak/sta
 const employmentUrl = "https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin/tyokay/statfin_tyokay_pxt_115b.px";
 
 const nf = new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 0 });
-const nfPct = new Intl.NumberFormat("fi-FI", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nfPct = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 async function runQuery(url, bodyPath) {
   const bodyRes = await fetch(bodyPath, { cache: "no-store" });
@@ -12,11 +12,24 @@ async function runQuery(url, bodyPath) {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
   return res.json();
 }
+
+function colorRow(tr, pct) {
+	let color = null;
+	if (pct > 45) color = "#abffbd";
+	else if (pct < 25) color = "#ff9e9e";
+	if (!color) return;
+  
+	tr.style.backgroundColor = color;
+	for (const cell of tr.children) {
+	  cell.style.backgroundColor = color;
+	}
+  }
+  
 
 function parseStat2(px) {
   const root = px.dimension ? px : px.dataset;
@@ -32,47 +45,6 @@ function parseStat2(px) {
   return { labels, codes, byCode };
 }
 
-function setupTable(popPx, empPx) {
-  const pop = parseStat2(popPx);
-  const emp = empPx && (empPx.dimension || empPx.dataset) ? parseStat2(empPx) : null;
-
-  const tbody = document.getElementById("pop-tbody");
-  tbody.innerHTML = "";
-
-  for (const code of pop.codes) {
-    const tr = document.createElement("tr");
-
-    const nameTd = document.createElement("td");
-    nameTd.textContent = pop.labels[code];
-
-    const population = Number(pop.byCode[code] ?? 0);
-    const popTd = document.createElement("td");
-    popTd.textContent = nf.format(population);
-    popTd.style.textAlign = "right";
-
-    const empVal = emp?.byCode?.[code];
-    const empTd = document.createElement("td");
-    empTd.textContent = Number.isFinite(empVal) ? nf.format(empVal) : "—";
-    empTd.style.textAlign = "right";
-
-    const pctTd = document.createElement("td");
-    pctTd.style.textAlign = "right";
-
-    if (population > 0 && Number.isFinite(empVal)) {
-      const pct = (empVal / population) * 100;
-      pctTd.textContent = `${nfPct.format(pct)}%`;
-
-      if (pct > 45) tr.classList.add("over-45");
-      else if (pct < 25) tr.classList.add("under-25");
-    } else {
-      pctTd.textContent = "—";
-    }
-
-    tr.append(nameTd, popTd, empTd, pctTd);
-    tbody.appendChild(tr);
-  }
-}
-
 function showErrorRow(msg) {
   const tbody = document.getElementById("pop-tbody");
   tbody.innerHTML = "";
@@ -84,11 +56,51 @@ function showErrorRow(msg) {
   tbody.appendChild(tr);
 }
 
+function setupTable(popPx, empPx) {
+  const pop = parseStat2(popPx);
+  const emp = empPx && (empPx.dimension || empPx.dataset) ? parseStat2(empPx) : null;
+
+  const tbody = document.getElementById("pop-tbody");
+  tbody.innerHTML = "";
+
+  for (const code of pop.codes) {
+    const tr = document.createElement("tr");
+
+    const td1 = document.createElement("td");
+    td1.textContent = pop.labels[code];
+
+    const population = Number(pop.byCode[code] ?? 0);
+    const td2 = document.createElement("td");
+    td2.textContent = nf.format(population);
+    td2.style.textAlign = "right";
+
+    const e = emp?.byCode?.[code];
+    const td3 = document.createElement("td");
+    td3.textContent = Number.isFinite(e) ? nf.format(e) : "—";
+    td3.style.textAlign = "right";
+
+	const td4 = document.createElement("td");
+	td4.style.textAlign = "right";
+	
+	let pct = null;
+	if (population > 0 && Number.isFinite(e)) {
+	  pct = (e / population) * 100;
+	  td4.textContent = `${nfPct.format(pct)}%`;
+	} else {
+	  td4.textContent = "—";
+	}
+	
+	tr.append(td1, td2, td3, td4);
+	if (pct !== null) colorRow(tr, pct);  // väritys tässä
+	tbody.appendChild(tr);
+  }
+}
+
 async function initializeCode() {
   try {
     const [populationData, employmentData] = await Promise.all([
       runQuery(populationUrl, "./population_query.json"),
-      runQuery(employmentUrl, "./employment_query.json")
+      runQuery(employmentUrl, "./employment_query.json"),
     ]);
     setupTable(populationData, employmentData);
   } catch (err) {
