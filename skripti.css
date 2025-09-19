@@ -1,48 +1,50 @@
 body {
-    font-family: Verdana, Arial, sans-serif;
-}
-
-.center {
-	margin: auto;
-	padding: 60px;
-	width: 60%;
-}
-
-table {
+    font-family: "Verdana, Arial, sans-serif";
+  }
+  
+  .center {
+    margin: auto;
+    padding: 60px;
+    width: 60%;
+  }
+  
+  table {
     border-collapse: collapse;
     font-size: 16px;
     text-align: left;
     table-layout: fixed;
     width: 100%;
-}
-
-td {
+  }
+  
+  td {
     padding: 6px;
     border-bottom: 1px solid gray;
-}
-
-th {
+  }
+  
+  th {
     background-color: #b7d0ff;
     font-weight: bold;
     padding: 12px 0px 12px 6px;
     border-bottom: 2px solid gray;
-}
-
-h1 {
+  }
+  
+  h1 {
     text-align: center;
-}
-
-tbody tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
-
-tbody tr:nth-child(odd) {
-    background-color: #ffffff;
-}
-
-tbody tr:hover {
-    background-color: #e0e0e0;
-}
-
-tr.over-45 { background-color: #abffbd !important; }
-tr.under-25 { background-color: #ff9e9e !important; }
+  }
+  
+  tbody tr:nth-child(even) { background-color: #f2f2f2; }
+  tbody tr:nth-child(odd)  { background-color: #ffffff; }
+  
+  /* korostus – laitetaan viimeiseksi ja td:llekin, sekä ohitetaan hover */
+  tbody tr.over-45,
+  tbody tr.over-45 td { background-color: #abffbd !important; }
+  
+  tbody tr.under-25,
+  tbody tr.under-25 td { background-color: #ff9e9e !important; }
+  
+  /* säilytä korostus myös hoverissa */
+  tbody tr.over-45:hover td { background-color: #abffbd !important; }
+  tbody tr.under-25:hover td { background-color: #ff9e9e !important; }
+  
+  tbody tr:hover { background-color: #e0e0e0; }
+  
