@@ -44,6 +44,6 @@ tbody tr:hover {
     background-color: #e0e0e0;
 }
 
-tbody tr.over-45 td { background-color: #abffbd !important; }
-tbody tr.under-25 td { background-color: #ff9e9e !important; }
+tbody tr.over-45 td { background-color: #abffbd; }
+tbody tr.under-25 td { background-color: #ff9e9e; }
 
