@@ -19,16 +19,14 @@ async function runQuery(url, bodyPath) {
 }
 
 function colorRow(tr, pct) {
-	let color = null;
+	let color = "";
 	if (pct > 45) color = "#abffbd";
 	else if (pct < 25) color = "#ff9e9e";
 	if (!color) return;
-  
 	tr.style.backgroundColor = color;
-	for (const cell of tr.children) {
-	  cell.style.backgroundColor = color;
-	}
+	Array.from(tr.children).forEach(td => (td.style.backgroundColor = color));
   }
+  
   
 
 function parseStat2(px) {
@@ -57,44 +55,50 @@ function showErrorRow(msg) {
 }
 
 function setupTable(popPx, empPx) {
-  const pop = parseStat2(popPx);
-  const emp = empPx && (empPx.dimension || empPx.dataset) ? parseStat2(empPx) : null;
-
-  const tbody = document.getElementById("pop-tbody");
-  tbody.innerHTML = "";
-
-  for (const code of pop.codes) {
-    const tr = document.createElement("tr");
-
-    const td1 = document.createElement("td");
-    td1.textContent = pop.labels[code];
-
-    const population = Number(pop.byCode[code] ?? 0);
-    const td2 = document.createElement("td");
-    td2.textContent = nf.format(population);
-    td2.style.textAlign = "right";
-
-    const e = emp?.byCode?.[code];
-    const td3 = document.createElement("td");
-    td3.textContent = Number.isFinite(e) ? nf.format(e) : "—";
-    td3.style.textAlign = "right";
-
-	const td4 = document.createElement("td");
-	td4.style.textAlign = "right";
-	
-	let pct = null;
-	if (population > 0 && Number.isFinite(e)) {
-	  pct = (e / population) * 100;
-	  td4.textContent = `${nfPct.format(pct)}%`;
-	} else {
-	  td4.textContent = "—";
+	const pop = parseStat2(popPx);
+	const emp = empPx && (empPx.dimension || empPx.dataset) ? parseStat2(empPx) : null;
+  
+	const tbody = document.getElementById("pop-tbody");
+	tbody.innerHTML = "";
+  
+	for (const code of pop.codes) {
+	  const tr  = document.createElement("tr");
+  
+	  const td1 = document.createElement("td");
+	  td1.textContent = pop.labels[code];
+  
+	  const population = Number(pop.byCode[code] ?? 0);
+	  const td2 = document.createElement("td");
+	  td2.textContent = nf.format(population);
+	  td2.style.textAlign = "right";
+  
+	  const e = emp?.byCode?.[code];
+	  const td3 = document.createElement("td");
+	  td3.textContent = Number.isFinite(e) ? nf.format(e) : "—";
+	  td3.style.textAlign = "right";
+  
+	  const td4 = document.createElement("td");
+	  td4.style.textAlign = "right";
+  
+	  let pct = null;
+	  if (population > 0 && Number.isFinite(e)) {
+		pct = (e / population) * 100;
+		td4.textContent = `${nfPct.format(pct)}%`;
+	  } else {
+		td4.textContent = "—";
+	  }
+  
+	  tr.append(td1, td2, td3, td4);
+	  if (population > 0 && Number.isFinite(e)) {
+		const pct = (e / population) * 100;
+		td4.textContent = `${nfPct.format(pct)}%`;
+		colorRow(tr, pct);   // väritys vasta kun kaikki td:t on rivissä
+	  } else {
+		td4.textContent = "—";
+	  }
+	  tbody.appendChild(tr);
 	}
-	
-	tr.append(td1, td2, td3, td4);
-	if (pct !== null) colorRow(tr, pct);  // väritys tässä
-	tbody.appendChild(tr);
   }
-}
 
 async function initializeCode() {
   try {
